@@ -1,0 +1,38 @@
+#!/bin/sh
+DAEMON="/data/rayhunter/event_monitor.sh"
+PIDFILE="/var/run/event-monitor.pid"
+
+start() {
+    printf 'Starting event monitor: '
+    start-stop-daemon -S -b -m -p $PIDFILE -x $DAEMON
+    [ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+
+stop() {
+    printf 'Stopping event monitor: '
+    start-stop-daemon -K -p $PIDFILE
+    [ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+
+restart() {
+    stop
+    sleep 2
+    start
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|reload)
+        restart
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?
