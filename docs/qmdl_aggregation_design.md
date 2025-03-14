@@ -1,93 +1,43 @@
 # QMDL Aggregation Design
 
-## 1. System Overview
-```
-QMDL Files --> Parser --> Event Detection --> Packet Extraction --> Aggregated Storage
-     ^                         |                    |                     |
-     |                        v                    v                     v
- Raw Data              Event Metadata        Context Buffer         Final Archive
-```
+## Overview
+When security events are detected, we need to preserve both the event data and the relevant network traffic for later analysis. This design outlines a simple approach to aggregate this data into two files that persist across reboots.
 
-## 2. Key Components
+## Storage
+Two aggregated files will store all relevant data:
+- `/data/rayhunter/aggregated_events.ndjson`: Contains all detected events
+- `/data/rayhunter/aggregated_packets.qmdl`: Contains the QMDL data corresponding to those events
 
-### A. QMDL Parser
-- Input: Raw QMDL files
-- Functionality:
-  - Read QMDL file format
-  - Extract packet data and timestamps
-  - Map packets to events
-- Output: Structured packet data with timestamps
+## Process Flow
+1. Event Detection
+   - Monitor NDJSON files for security events (already implemented)
+   - When event detected, append to aggregated events file
 
-### B. Context Buffer System
-- Purpose: Maintain rolling buffer of packets around events
-- Features:
-  - Store 3-5 packets before event
-  - Store 3-5 packets after event
-  - Track packet timestamps
-  - Handle packet boundaries
+2. QMDL Processing
+   - Find corresponding QMDL file based on event timestamp
+   - Extract relevant section from QMDL file
+   - Append to aggregated packets file
 
-### C. Aggregation System
-- Storage Structure:
-  ```
-  /data/rayhunter/
-  ├── aggregated/
-  │   ├── events/
-  │   │   └── YYYYMMDD_HHMMSS_event_type.json
-  │   └── packets/
-  │       └── YYYYMMDD_HHMMSS_event_type.qmdl
-  └── metadata/
-      └── packet_event_map.json
-  ```
-- Metadata tracking:
-  - Event ID
-  - Source QMDL file
-  - Timestamp ranges
-  - Packet offsets
+## Implementation Plan
 
-### D. Timestamp Management
-- Handle:
-  - Packet timestamps
-  - Event timestamps
-  - System timestamps
-  - Timestamp mismatches
-  - Time zone considerations
+### Phase 1: Basic Implementation
+1. Set up aggregated files
+   - Create files if they don't exist
+   - Implement append operations
+   - Handle basic error cases (permissions, disk space)
 
-## 3. Implementation Phases
+2. QMDL Processing
+   - Implement QMDL file reading
+   - Extract relevant sections
+   - Basic timestamp matching
 
-### Phase 1: Basic QMDL Processing
-- Implement QMDL file reading
-- Extract basic packet information
-- Set up storage structure
-- Basic timestamp handling
+### Testing
+- Manual testing with existing QMDL files
+- Verify correct sections are extracted
+- Check file integrity after appending
 
-### Phase 2: Context Buffer
-- Implement packet buffering
-- Add before/after packet capture
-- Handle buffer management
-- Basic error handling
-
-### Phase 3: Aggregation
-- Implement file copying
-- Add metadata tracking
-- Create packet-event mapping
-- Handle storage management
-
-### Phase 4: Error Handling & Recovery
-- Add timestamp mismatch handling
-- Implement recovery mechanisms
-- Add validation checks
-- Improve error reporting
-
-## 4. Error Handling Strategy
-- Timestamp mismatches
-- Corrupted QMDL files
-- Missing packets
-- Storage failures
-- Resource constraints
-
-## 5. Testing Strategy
-- Unit tests for each component
-- Integration tests for full flow
-- Test with corrupted data
-- Performance testing
-- Resource usage monitoring 
+## Error Cases to Handle
+- QMDL file not found
+- Permission issues
+- Disk space issues
+- Basic timestamp mismatches 
